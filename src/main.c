@@ -4,6 +4,10 @@
 #define MAX 26 // Maximum size the board can be
 #define WIDTH 4 //Width of boxes that are drawn
 
+//Colours
+#define WHITE 0xFFFF
+#define BLACK 0x0000
+
 //GLOBALS
 volatile int pixel_buffer_start; //Pointer to the current pixel buffer
 
@@ -64,13 +68,34 @@ void waitForSync();
 //Draws a box on the screen at x,y of predefined width and height and colout
 void drawBox(int x,int y,short int color);
 
+//Draws the grid lines
+void drawGridLines();
+
 
 
 int main(int argc, char** argv){
     // board really of type Status, but using int for now
     // in case of name changes
     GridSquare board[MAX][MAX];
-    
+
+    volatile int * pixel_ctrl_ptr = (int *)0xFF203020;
+    // declare other variables(not shown)
+    // initialize location and direction of rectangles(not shown)
+
+    /* set front pixel buffer to start of FPGA On-chip memory */
+    *(pixel_ctrl_ptr + 1) = 0xC8000000; // first store the address in the 
+                                        // back buffer
+    /* now, swap the front/back buffers, to set the front buffer location */
+    waitForSync();
+    /* initialize a pointer to the pixel buffer, used by drawing functions */
+    pixel_buffer_start = *pixel_ctrl_ptr;
+    clearScreen(); // pixel_buffer_start points to the pixel buffer
+    /* set back pixel buffer to start of SDRAM memory */
+    *(pixel_ctrl_ptr + 1) = 0xC0000000;
+    pixel_buffer_start = *(pixel_ctrl_ptr + 1); // we draw on the back buffer
+    clearScreen();
+    drawGridLines();
+    waitForSync();
     return 0;
 }
 
@@ -231,5 +256,14 @@ void drawBox(int x,int y,short int color){
         for(int b = y-WIDTH; b <= y+WIDTH; b++){
             plotPixel(a,b,color);
         }
+    }
+}
+
+void drawGridLines(){
+    for(int i = 39; i<=279; i+=30){
+        drawLine(i,0,i,239,WHITE);
+    }
+    for(int j = 0; j<239; j+=30){
+         drawLine(39,j,279,j,WHITE);
     }
 }
