@@ -2,6 +2,10 @@
 #include <stdbool.h>
 
 #define MAX 26 // Maximum size the board can be
+#define WIDTH 4 //Width of boxes that are drawn
+
+//GLOBALS
+volatile int pixel_buffer_start; //Pointer to the current pixel buffer
 
 
 // Types of moves a user can input
@@ -41,6 +45,25 @@ void playMove(GridSquare **board, int size, int row, int col, Move move);
 
 // If the users plays a safe multiple squares may be uncovered
 void safeChain(GridSquare **board, int size, int row, int col);
+
+//Plots a particular pixel the specified colour
+void plotPixel(int x, int y, short int colour);
+
+//Clears the whole screen to black
+void clearScreen();
+
+//Swaps the value of two integers
+void swap(int* a, int*b);
+
+//Draws a line with specified colour between two points
+void drawLine(int x0, int y0, int x1, int y1, short int color);
+
+//Waits to sync the vga buffer and switches to back buffer
+void waitForSync();
+
+//Draws a box on the screen at x,y of predefined width and height and colout
+void drawBox(int x,int y,short int color);
+
 
 
 int main(int argc, char** argv){
@@ -129,4 +152,84 @@ void playMove(GridSquare ** board, int size, int row, int col, Move move){
 void safeChain(GridSquare **board, int size, int row, int col){
     /* Expose appropriate squares */
     return;
+}
+
+void plotPixel(int x, int y, short int colour){
+    *(short int *)(pixel_buffer_start + (y << 10) + (x << 1)) = colour;
+}
+
+//Iterate through every pixel and set the colour to black
+void clearScreen(){
+    for(int i = 0; i<320; i++){
+
+        for(int j=0; j<240; j++){
+
+            plotPixel(i,j,0x0000);
+        }
+    }
+}
+
+void swap(int* a, int* b){
+    int temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+void drawLine(int x0, int y0, int x1, int y1, short int color){
+    bool steep = abs(y1-y0) > abs(x1-x0);
+    if(steep){
+        swap(&x0 , &y0);
+        swap(&x1,&y1);
+    }
+    if(x0>x1){
+        swap(&x0,&x1);
+        swap(&y0,&y1);
+    }
+
+    int delx = x1 - x0;
+    int dely = abs(y1-y0);
+    int error = -delx/2;
+    int y = y0;
+    int ystep;
+
+    if(y0<y1){
+       ystep = 1; 
+    }
+    else{
+        ystep = -1;
+    }
+
+    for(int x = x0; x <= x1; x++){
+        if(steep){
+            plotPixel(y,x,color);
+        }
+        else{
+            plotPixel(x,y,color);
+        }
+        error = error + dely;
+        if(error >= 0){
+            y += ystep;
+            error -= delx;
+        }
+    }
+}
+
+void waitForSync(){
+    volatile int *pixel_ctrl_ptr = 0xFF203020;
+    register int status;
+
+    *pixel_ctrl_ptr = 1;
+
+    status = *(pixel_ctrl_ptr+3);
+    while((status & 0x01) != 0){
+        status = *(pixel_ctrl_ptr+3);
+    }
+}
+
+void drawBox(int x,int y,short int color){
+    for(int a = x-WIDTH; a<= x+WIDTH; a++){
+        for(int b = y-WIDTH; b <= y+WIDTH; b++){
+            plotPixel(a,b,color);
+        }
+    }
 }
