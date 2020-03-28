@@ -23,7 +23,7 @@ typedef enum Move{
 typedef enum Status{
     HIDDEN,
     FLAGGED,
-    MARKED,
+    QUESTIONED,
     MINE_EXPOSED,
     SAFE_EXPOSED
 } Status;
@@ -154,18 +154,39 @@ void initializeBoard_random(GridSquare** board, int size, int mineNumber){
 void playMove(GridSquare ** board, int size, int row, int col, Move move){
     GridSquare* currentSq = &board[row][col];
 
-    switch (move)
-    {
+    switch (move){
+
     case UNCOVER:
         if (currentSq -> isSafe){
+            // multiple tiles may need to change
             safeChain(board, size, row, col); 
         }
-        else
-        {
-            currentSq->currentStatus = MINE_EXPOSED;            
-        }
-        
+        else{ // mine triggered
+            currentSq->currentStatus = MINE_EXPOSED;
+        } 
         break;
+
+    case FLAG:
+        Status currState = currentSq->currentStatus;
+        // inverses a flagged
+        if(currState == FLAGGED){
+            currentSq ->currentStatus = HIDDEN;
+        } 
+        else if (currState == HIDDEN || currState == QUESTIONED){ // making it flagged
+            currentSq -> currentStatus = FLAGGED;
+        }
+        break;
+
+    case QUESTION:
+        Status currState = currentSq->currentStatus;
+        if (currState == HIDDEN || currState == FLAGGED){
+            currentSq -> currentStatus = QUESTIONED;
+        }
+        else if(currState == QUESTIONED){
+            currentSq -> currentStatus = HIDDEN;
+        }
+        break;
+
     default:
         break;
     }
@@ -173,12 +194,45 @@ void playMove(GridSquare ** board, int size, int row, int col, Move move){
 
 }
 
-
+// Recursive function that exposes selected square and adjacent squares
+// and so on and so forth
 void safeChain(GridSquare **board, int size, int row, int col){
     /* Expose appropriate squares */
+    GridSquare* currentSq = &board[row][col];
+
+    currentSq->currentStatus = SAFE_EXPOSED; // update selected
+
+    // iterate through the 8 squares adjacent
+    for(int deltaRow = -1; deltaRow < 2; deltaRow ++){
+        for (int deltaCol = -1; deltaCol < 2; deltaCol ++){
+            if (deltaCol == 0 && deltaRow == 0) continue;
+
+            int currRow = row+deltaRow; int currCol = col+deltaCol;
+
+            if (!inBounds(size, currRow, currCol)) continue;
+
+            currentSq = &board[currRow][currCol];
+
+            // if adjacent is already updated, move to next 
+            if(currentSq->currentStatus = SAFE_EXPOSED) continue;
+
+            if(currentSq->isSafe){
+                if(currentSq->minesAdjacent == 0){
+                    // Chain if there are 0 adjacent mines on the
+                    // adjacent square (call flip square itself as well)
+                    safeChain(board, size, currRow, currCol);
+                }else{
+                    currentSq->currentStatus = SAFE_EXPOSED; // update adjacent square
+                }
+            }
+
+        }
+    }
     return;
 }
 
+
+/*Drawing Functions*/
 void plotPixel(int x, int y, short int colour){
     *(short int *)(pixel_buffer_start + (y << 10) + (x << 1)) = colour;
 }
