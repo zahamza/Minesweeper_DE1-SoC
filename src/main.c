@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define MAX 26 // Maximum size the board can be
-#define WIDTH 4 //Width of boxes that are drawn
+#define MAX 8 // Maximum size the board can be
+#define WIDTH 6 //Width of boxes that are drawn
 
 //Colours
 #define WHITE 0xFFFF
@@ -10,6 +10,11 @@
 
 //GLOBALS
 volatile int pixel_buffer_start; //Pointer to the current pixel buffer
+volatile int* ps2_ptr = (int*) 0xFF200100; //Pointer to PS2
+
+//Globals for game
+int currX,currY,prevX,prevY,remX,remY;
+int realX,realY,clearX,clearY,byeX,byeY;
 
 // Types of moves a user can input
 typedef enum Move{
@@ -70,8 +75,12 @@ void drawBox(int x,int y,short int color);
 //Draws the grid lines
 void drawGridLines();
 
+//Clears the grid lines
+void clearGridLines();
+
 
 int main(int argc, char** argv){
+     /*BELOW IS SETUP FOR THE SCREEN*/
     // board really of type Status, but using int for now
     // in case of name changes
     GridSquare board[MAX][MAX];
@@ -92,8 +101,112 @@ int main(int argc, char** argv){
     *(pixel_ctrl_ptr + 1) = 0xC0000000;
     pixel_buffer_start = *(pixel_ctrl_ptr + 1); // we draw on the back buffer
     clearScreen();
-    drawGridLines();
-    waitForSync();
+
+
+    //SETTING UP POINTERS FOR PS2
+
+    int keyData, keyValid;
+    bool run = true;
+    bool upPress = false;
+    bool downPress = false;
+    bool leftPress = false;
+    bool rightPress = false;
+
+    //Setting up coordinates 
+    currX = 0;
+    currY = 0;
+    prevX = 0;
+    prevY = 0;
+    remX = 0;
+    remY = 0;
+
+    while(run){
+        keyData = *ps2_ptr;
+        keyValid = keyData & 0x8000;
+        if(keyValid==0x8000){
+
+            //Left arrow key is pressed
+            if((keyData & 0xFF) == 0x6B){
+                if(!leftPress){
+                    remX = prevX;
+                    prevX = currX;
+                    remY = prevY;
+                    prevY = currY;
+                    if(currX!=0) currX -= 1;
+                    else currX = 7;
+                    leftPress = true;
+                }
+                else{
+                    leftPress = false;
+                }
+            }
+
+            //Right arrow key is pressed
+            if((keyData & 0xFF) == 0x74){
+                if(!rightPress){
+                    remX = prevX;
+                    prevX = currX;
+                    remY = prevY;
+                    prevY = currY;
+                    if(currX != 7) currX += 1;
+                    else currX = 0;
+                    rightPress = true;
+                }
+                else{
+                    rightPress = false;
+                }
+            }
+
+            //Down arrow is pressed
+            if((keyData & 0xFF) == 0x72){
+                if(!downPress){
+                    remX = prevX;
+                    prevX = currX;
+                    remY = prevY;
+                    prevY = currY;
+                    if(currY != 7) currY += 1;
+                    else currY = 0;
+                    downPress = true;
+                }
+                else{
+                    downPress = false;
+                }
+            }
+
+            //Up arrow is pressed 
+            if((keyData & 0xFF) == 0x75){
+                if(!upPress){
+                    remX = prevX;
+                    prevX = currX;
+                    remY = prevY;
+                    prevY = currY;
+                    if(currY != 0) currY -= 1;
+                    else currY = 7;
+                    upPress = true;
+                }
+                else{
+                    upPress = false;
+                }
+            }
+
+        }
+
+        realX = 39 + 15 + currX*30;
+        realY = 15 + currY*30;
+        clearX = 39 + 15 + remX*30;
+        clearY = 15 + remY*30;
+        byeX = 39 + 15 + prevX*30;
+        byeY = 15 + prevY*30;
+
+        clearGridLines();
+        drawBox(clearX,clearY,BLACK);
+        drawBox(byeX,byeY,BLACK);
+        drawBox(realX,realY,WHITE);
+        drawGridLines();
+        waitForSync();
+        pixel_buffer_start = *(pixel_ctrl_ptr + 1); // we draw on the back buffer
+
+    }
     return 0;
 }
 

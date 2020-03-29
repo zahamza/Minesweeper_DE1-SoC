@@ -126,3 +126,12 @@ void drawGridLines(){
          drawLine(39,j,279,j,WHITE);
     }
 }
+
+void clearGridLines(){
+    for(int i = 39; i<=279; i+=30){
+        drawLine(i,0,i,239,BLACK);
+    }
+    for(int j = 0; j<239; j+=30){
+         drawLine(39,j,279,j,BLACK);
+    }
+}
