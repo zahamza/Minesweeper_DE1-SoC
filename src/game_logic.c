@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
-
+#include <stdio.h>
 #define MAX 8 // Maximum size the board can be
 
 #define MAX_ADJACENT_MINES 4
@@ -33,13 +33,13 @@ bool inBounds(int size, int row, int col){return (row >= 0 && col >= 0 && row <s
 
 /* Forward Declarations*/
 // Generates an initial board with randomized mines
-void initializeBoard_random(GridSquare** board, int size, int mineNumber);
+void initializeBoard_random(GridSquare board[][MAX], int size, int mineNumber);
 
 // Updates board depending on the user's move
-void playMove(GridSquare **board, int size, int row, int col, Move move);
+void playMove(GridSquare board[][MAX], int size, int row, int col, Move move);
 
 // If the users plays a safe multiple squares may be uncovered
-void safeChain(GridSquare **board, int size, int row, int col);
+void safeChain(GridSquare board[][MAX], int size, int row, int col);
 
 //Plots a particular pixel the specified colour
 void plotPixel(int x, int y, short int colour);
@@ -62,30 +62,48 @@ void drawBox(int x,int y,short int color);
 //Draws the grid lines
 void drawGridLines();
 
+void printboard(GridSquare board[][MAX], int size);
 
 
 int main(int argc, char** argv){
     // board really of type Status, but using int for now
     // in case of name changes
+    int size = 5;
     GridSquare board[MAX][MAX];
+
+
+    initializeBoard_random(board, size, 2);
+
+
     return 0;
 }
 
 
-void initializeBoard_random(GridSquare** board, int size, int mineNumber){
+void printboard(GridSquare board[][MAX], int size){
+    for(int row = 0; row < size; row++){
+        for (int col = 0; col<size; col++){
+            printf("%d ", board[row][col].minesAdjacent);
+        }
+        printf("\n");
+    }
+    printf("\n");
+    return;
+}
+
+void initializeBoard_random(GridSquare board[][MAX], int size, int mineNumber){
     int minesPlaced = 0;
 
     // sets every grid as safe
     for(int row = 0; row<size; row++){
         for(int col = 0; col<size; col++){
-            GridSquare* square = &board[row][col];
             // initailize grid
-            square -> isSafe = true;
+            GridSquare* square = &board[row][col];
+            board[row][col].isSafe = true;
             square -> currentStatus = HIDDEN;
             square -> minesAdjacent = 0;
         }
     }
-
+    printboard(board, size);
     // places mines randomly
     while (minesPlaced < mineNumber){
         int randomRow = rand()%size;
@@ -132,11 +150,12 @@ void initializeBoard_random(GridSquare** board, int size, int mineNumber){
 
         }
     }
+        printboard(board, size);
 
 }
 
 
-void playMove(GridSquare ** board, int size, int row, int col, Move move){
+void playMove(GridSquare board[][MAX], int size, int row, int col, Move move){
     GridSquare* currentSq = &board[row][col];
 
     Status currState = currentSq->currentStatus;;
@@ -181,7 +200,7 @@ void playMove(GridSquare ** board, int size, int row, int col, Move move){
 
 // Recursive function that exposes selected square and adjacent squares
 // and so on and so forth
-void safeChain(GridSquare **board, int size, int row, int col){
+void safeChain(GridSquare board[][MAX], int size, int row, int col){
     /* Expose appropriate squares */
     GridSquare* currentSq = &board[row][col];
 
