@@ -3,6 +3,9 @@
 
 #define MAX 26 // Maximum size the board can be
 
+#define MAX_ADJACENT_MINES 4
+
+
 // Types of moves a user can input
 typedef enum Move{
     FLAG,
@@ -27,9 +30,6 @@ typedef struct gridSquare{
 
 // Checks if a given move is in bounds
 bool inBounds(int size, int row, int col){return (row >= 0 && col >= 0 && row <size && col <size);}
-
-// Checks how many mines are adjacents at a given position
-int getAdjacentMines(GridSquare **board, int size, int row, int col);
 
 /* Forward Declarations*/
 // Generates an initial board with randomized mines
@@ -64,28 +64,11 @@ void drawGridLines();
 
 
 
-// int main(int argc, char** argv){
-//     // board really of type Status, but using int for now
-//     // in case of name changes
-//     GridSquare board[MAX][MAX];
-//     return 0;
-// }
-
-
-int getAdjacentMines(GridSquare **board, int size, int row, int col){
-    int mineNumber = 0;
-
-    for(int deltaRow = -1; deltaRow < 2; deltaRow ++){
-        for (int deltaCol = -1; deltaCol < 2; deltaCol ++){
-            if (deltaCol == 0 && deltaRow == 0) continue;
-
-            int currRow = row+deltaRow; int currCol = col+deltaCol;
-            if (!inBounds(size, currRow, currCol)) continue;
-
-            if(!(board[currRow][currCol].isSafe)) mineNumber++;
-        }
-    }
-    return mineNumber;
+int main(int argc, char** argv){
+    // board really of type Status, but using int for now
+    // in case of name changes
+    GridSquare board[MAX][MAX];
+    return 0;
 }
 
 
@@ -108,15 +91,43 @@ void initializeBoard_random(GridSquare** board, int size, int mineNumber){
         GridSquare* square = &board[randomRow][randomCol];
 
         if(square -> isSafe){
-            square -> isSafe = false; // sets 
-            minesPlaced ++;
-        }
-    }
 
-    // gets number of mines adjacent
-    for(int row = 0; row<size; row++){
-        for(int col = 0; col<size; col++){
-            board[row][col].minesAdjacent = getAdjacentMines(board, size, row, col);
+            // checking in all adjacent squares the adjacent
+            // mine placments
+            bool pastMaxAdjacent = false;
+
+            for(int deltaRow = -1; deltaRow < 2; deltaRow ++){
+                for (int deltaCol = -1; deltaCol < 2; deltaCol ++){
+                    if (deltaCol == 0 && deltaRow == 0) continue;
+
+                    int currRow = randomRow+deltaRow; int currCol = randomCol+deltaCol;
+                    if (!inBounds(size, currRow, currCol)) continue;
+
+                    if(board[currRow][currCol].minesAdjacent > MAX_ADJACENT_MINES){
+                        pastMaxAdjacent = true;
+                        break;
+                    }
+                }
+                if (pastMaxAdjacent) break;
+            }
+            // we don't set a mine here if true, breaking while loop
+            if (pastMaxAdjacent) break;
+
+            square -> isSafe = false; // sets 
+            minesPlaced ++; // incriment mine counter
+            
+            // assign adjacent mines
+            for(int deltaRow = -1; deltaRow < 2; deltaRow ++){
+                for (int deltaCol = -1; deltaCol < 2; deltaCol ++){
+                    if (deltaCol == 0 && deltaRow == 0) continue;
+
+                    int currRow = randomRow+deltaRow; int currCol = randomCol+deltaCol;
+                    if (!inBounds(size, currRow, currCol)) continue;
+
+                    board[currRow][currCol].minesAdjacent += 1;
+                }
+            }
+
         }
     }
 
@@ -126,9 +137,11 @@ void initializeBoard_random(GridSquare** board, int size, int mineNumber){
 void playMove(GridSquare ** board, int size, int row, int col, Move move){
     GridSquare* currentSq = &board[row][col];
 
+    Status currState = currentSq->currentStatus;;
+
     switch (move){
 
-    case UNCOVER:
+    case UNCOVER: 
         if (currentSq -> isSafe){
             // multiple tiles may need to change
             safeChain(board, size, row, col); 
@@ -138,8 +151,7 @@ void playMove(GridSquare ** board, int size, int row, int col, Move move){
         } 
         break;
 
-    case FLAG:
-        Status currState = currentSq->currentStatus;
+    case FLAG: 
         // inverses a flagged
         if(currState == FLAGGED){
             currentSq ->currentStatus = HIDDEN;
@@ -149,8 +161,7 @@ void playMove(GridSquare ** board, int size, int row, int col, Move move){
         }
         break;
 
-    case QUESTION:
-        Status currState = currentSq->currentStatus;
+    case QUESTION: 
         if (currState == HIDDEN || currState == FLAGGED){
             currentSq -> currentStatus = QUESTIONED;
         }
