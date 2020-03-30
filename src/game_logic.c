@@ -79,8 +79,10 @@ void initializeBoard_random(GridSquare** board, int size, int mineNumber){
     for(int row = 0; row<size; row++){
         for(int col = 0; col<size; col++){
             GridSquare* square = &board[row][col];
+            // initailize grid
             square -> isSafe = true;
             square -> currentStatus = HIDDEN;
+            square -> minesAdjacent = 0;
         }
     }
 
@@ -113,10 +115,10 @@ void initializeBoard_random(GridSquare** board, int size, int mineNumber){
             // we don't set a mine here if true, breaking while loop
             if (pastMaxAdjacent) break;
 
+
             square -> isSafe = false; // sets 
-            minesPlaced ++; // incriment mine counter
-            
-            // assign adjacent mines
+            minesPlaced ++; // incriment mine counter            
+            // incriment adjacent square adjacentMines
             for(int deltaRow = -1; deltaRow < 2; deltaRow ++){
                 for (int deltaCol = -1; deltaCol < 2; deltaCol ++){
                     if (deltaCol == 0 && deltaRow == 0) continue;
