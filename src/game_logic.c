@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define MAX 26 // Maximum size the board can be
+#define MAX 8 // Maximum size the board can be
 
 #define MAX_ADJACENT_MINES 4
 
