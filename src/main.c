@@ -249,6 +249,12 @@ int fours[784];
 int questions[784];
 int flags[784];
 
+
+/*=============================================================================================*/
+/*================================= Game Logic BEGIN ==========================================*/
+/*=============================================================================================*/
+
+
 // Types of moves a user can input
 typedef enum Move{
     FLAG,
@@ -274,18 +280,20 @@ typedef struct gridSquare{
 // Checks if a given move is in bounds
 bool inBounds(int size, int row, int col){return (row >= 0 && col >= 0 && row <size && col <size);}
 
-// Checks how many mines are adjacents at a given position
-int getAdjacentMines(GridSquare **board, int size, int row, int col);
-
 /* Forward Declarations*/
 // Generates an initial board with randomized mines
-void initializeBoard_random(GridSquare** board, int size, int mineNumber);
+void initializeBoard_random(GridSquare board[][MAX], int size, int mineNumber);
 
 // Updates board depending on the user's move
-void playMove(GridSquare **board, int size, int row, int col, Move move);
+void playMove(GridSquare board[][MAX], int size, int row, int col, Move move);
 
 // If the users plays a safe multiple squares may be uncovered
-void safeChain(GridSquare **board, int size, int row, int col);
+void safeChain(GridSquare board[][MAX], int size, int row, int col);
+
+/*=============================================================================================*/
+/*================================= Game Logic END ============================================*/
+/*=============================================================================================*/
+
 
 //Plots a particular pixel the specified colour
 void plotPixel(int x, int y, short int colour);
@@ -494,15 +502,23 @@ int main(int argc, char** argv){
     return 0;
 }
 
-void initializeBoard_random(GridSquare** board, int size, int mineNumber){
+
+/*=============================================================================================*/
+/*================================= Game Logic BEGIN===========================================*/
+/*=============================================================================================*/
+
+
+void initializeBoard_random(GridSquare board[][MAX], int size, int mineNumber){
     int minesPlaced = 0;
 
     // sets every grid as safe
     for(int row = 0; row<size; row++){
         for(int col = 0; col<size; col++){
+            // initailize grid
             GridSquare* square = &board[row][col];
-            square -> isSafe = true;
+            board[row][col].isSafe = true;
             square -> currentStatus = HIDDEN;
+            square -> minesAdjacent = 0;
         }
     }
 
@@ -535,10 +551,10 @@ void initializeBoard_random(GridSquare** board, int size, int mineNumber){
             // we don't set a mine here if true, breaking while loop
             if (pastMaxAdjacent) break;
 
+
             square -> isSafe = false; // sets 
-            minesPlaced ++; // incriment mine counter
-            
-            // assign adjacent mines
+            minesPlaced ++; // incriment mine counter            
+            // incriment adjacent square adjacentMines
             for(int deltaRow = -1; deltaRow < 2; deltaRow ++){
                 for (int deltaCol = -1; deltaCol < 2; deltaCol ++){
                     if (deltaCol == 0 && deltaRow == 0) continue;
@@ -552,11 +568,12 @@ void initializeBoard_random(GridSquare** board, int size, int mineNumber){
 
         }
     }
+        
 
 }
 
 
-void playMove(GridSquare ** board, int size, int row, int col, Move move){
+void playMove(GridSquare board[][MAX], int size, int row, int col, Move move){
     GridSquare* currentSq = &board[row][col];
 
     Status currState = currentSq->currentStatus;;
@@ -601,7 +618,7 @@ void playMove(GridSquare ** board, int size, int row, int col, Move move){
 
 // Recursive function that exposes selected square and adjacent squares
 // and so on and so forth
-void safeChain(GridSquare **board, int size, int row, int col){
+void safeChain(GridSquare board[][MAX], int size, int row, int col){
     /* Expose appropriate squares */
     GridSquare* currentSq = &board[row][col];
 
@@ -618,8 +635,10 @@ void safeChain(GridSquare **board, int size, int row, int col){
 
             currentSq = &board[currRow][currCol];
 
+            // printf("[%d,%d]: %d\n", currRow, currCol, currentSq->minesAdjacent);
+
             // if adjacent is already updated, move to next 
-            if(currentSq->currentStatus = SAFE_EXPOSED) continue;
+            if(currentSq->currentStatus == SAFE_EXPOSED) continue;
 
             if(currentSq->isSafe){
                 if(currentSq->minesAdjacent == 0){
@@ -635,6 +654,11 @@ void safeChain(GridSquare **board, int size, int row, int col){
     }
     return;
 }
+
+/*=============================================================================================*/
+/*================================= Game Logic END ============================================*/
+/*=============================================================================================*/
+
 
 void plotPixel(int x, int y, short int colour){
     *(short int *)(pixel_buffer_start + (y << 10) + (x << 1)) = colour;

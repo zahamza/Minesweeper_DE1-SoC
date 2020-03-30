@@ -41,27 +41,6 @@ void playMove(GridSquare board[][MAX], int size, int row, int col, Move move);
 // If the users plays a safe multiple squares may be uncovered
 void safeChain(GridSquare board[][MAX], int size, int row, int col);
 
-//Plots a particular pixel the specified colour
-void plotPixel(int x, int y, short int colour);
-
-//Clears the whole screen to black
-void clearScreen();
-
-//Swaps the value of two integers
-void swap(int* a, int*b);
-
-//Draws a line with specified colour between two points
-void drawLine(int x0, int y0, int x1, int y1, short int color);
-
-//Waits to sync the vga buffer and switches to back buffer
-void waitForSync();
-
-//Draws a box on the screen at x,y of predefined width and height and colout
-void drawBox(int x,int y,short int color);
-
-//Draws the grid lines
-void drawGridLines();
-
 void printboard(GridSquare board[][MAX], int size);
 
 
@@ -72,9 +51,9 @@ int main(int argc, char** argv){
     GridSquare board[MAX][MAX];
 
 
-    initializeBoard_random(board, size, 2);
-
-
+    initializeBoard_random(board, size, 6);
+    playMove(board, size, 4,4, UNCOVER);
+    printboard(board, size);
     return 0;
 }
 
@@ -82,7 +61,12 @@ int main(int argc, char** argv){
 void printboard(GridSquare board[][MAX], int size){
     for(int row = 0; row < size; row++){
         for (int col = 0; col<size; col++){
-            printf("%d ", board[row][col].minesAdjacent);
+            if(board[row][col].currentStatus == SAFE_EXPOSED) printf("e");
+            else printf("h");
+            if(board[row][col].isSafe) printf("s");
+            else printf("b");
+            printf("%d", board[row][col].minesAdjacent);
+            printf(" ");
         }
         printf("\n");
     }
@@ -103,7 +87,7 @@ void initializeBoard_random(GridSquare board[][MAX], int size, int mineNumber){
             square -> minesAdjacent = 0;
         }
     }
-    printboard(board, size);
+
     // places mines randomly
     while (minesPlaced < mineNumber){
         int randomRow = rand()%size;
@@ -150,7 +134,7 @@ void initializeBoard_random(GridSquare board[][MAX], int size, int mineNumber){
 
         }
     }
-        printboard(board, size);
+        
 
 }
 
@@ -217,8 +201,10 @@ void safeChain(GridSquare board[][MAX], int size, int row, int col){
 
             currentSq = &board[currRow][currCol];
 
+            // printf("[%d,%d]: %d\n", currRow, currCol, currentSq->minesAdjacent);
+
             // if adjacent is already updated, move to next 
-            if(currentSq->currentStatus = SAFE_EXPOSED) continue;
+            if(currentSq->currentStatus == SAFE_EXPOSED) continue;
 
             if(currentSq->isSafe){
                 if(currentSq->minesAdjacent == 0){
