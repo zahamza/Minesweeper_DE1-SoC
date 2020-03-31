@@ -13,6 +13,7 @@
 
 #define MAX 8 // Maximum size the board can be
 #define WIDTH 6 //Width of boxes that are drawn
+#define BOMBS 8
 #define MAX_ADJACENT_MINES 4
 
 //Colours
@@ -287,6 +288,7 @@ typedef enum Status{
 
 typedef struct gridSquare{
     Status currentStatus;
+    Status prevStatus;
     bool isSafe; // if false there is a mine
     int minesAdjacent;
 }GridSquare;
@@ -526,7 +528,7 @@ int main(int argc, char** argv){
         drawBox(realX,realY,RED);
         for(int i=0; i<8; i++){
             for(int j=0; j<8; j++){
-                if(board[i][j].currentStatus==HIDDEN){
+                if(board[i][j].currentStatus==HIDDEN && (board[i][j].prevStatus==FLAGGED || board[i][j].prevStatus==QUESTIONED)){
                     clearGridBox(i,j);
                 }
                 if(board[i][j].currentStatus==FLAGGED){
@@ -577,6 +579,7 @@ void initializeBoard_random(GridSquare board[][MAX], int size, int mineNumber){
             GridSquare* square = &board[row][col];
             board[row][col].isSafe = true;
             square -> currentStatus = HIDDEN;
+            square -> prevStatus = HIDDEN;
             square -> minesAdjacent = 0;
         }
     }
@@ -653,18 +656,22 @@ void playMove(GridSquare board[][MAX], int size, int row, int col, Move move){
         // inverses a flagged
         if(currState == FLAGGED){
             currentSq ->currentStatus = HIDDEN;
+            currentSq ->prevStatus = FLAGGED;
         } 
         else if (currState == HIDDEN || currState == QUESTIONED){ // making it flagged
             currentSq -> currentStatus = FLAGGED;
+            currentSq -> prevStatus = HIDDEN;
         }
         break;
 
     case QUESTION: 
         if (currState == HIDDEN || currState == FLAGGED){
             currentSq -> currentStatus = QUESTIONED;
+            currentSq ->prevStatus = HIDDEN;
         }
         else if(currState == QUESTIONED){
             currentSq -> currentStatus = HIDDEN;
+            currentSq ->prevStatus = QUESTIONED;
         }
         break;
 
@@ -823,27 +830,7 @@ void drawGridBox(int xpos, int ypos, char type){
     //int currentX,currentY,k;
     int startX = 40 + 30*xpos;
     int startY = 1 + 30*ypos;
-    if(type =='0'){
-        arr = zeros;
-    }
-    if(type == '1'){
-        arr = ones;
-    }
-    if(type == '2'){
-       arr = twos;
-    }
-    if(type =='3'){
-        arr = threes;
-    }
-    if(type =='4'){
-        arr = fours;
-    }
-    if(type =='f'){
-        arr = flags;
-    }
-    if(type =='q'){
-        arr = ques;
-    }
+    arr = getBitMap(type);
     if(arr!=NULL){
         for(int j=0; j<28; j++){
             for(int i=0; i<28; i++){
@@ -905,7 +892,7 @@ int* getBitMap(char type){
             break;
         
         case 'q':
-            arr = questions;
+            arr = ques;
             break;
         
         case 'f':
