@@ -328,6 +328,14 @@ void convertArray(int* data, int* final);
 //Clears one box in the grid.
 void clearGridBox(int xpos, int ypos);
 
+// Returns array identifier based off a character
+// 
+// Note: if identifier not found, returns NULL
+int* getBitMap(char type);
+
+// clears a grid with a specific character
+void clearGridBox_specific(int xpos, int ypos, char type);
+
 
 int main(int argc, char** argv){
     /*BELOW IS SETUP FOR THE SCREEN*/
@@ -820,5 +828,60 @@ void clearGridBox(int xpos, int ypos){
             
         }
     }
+}
 
+
+int* getBitMap(char type){
+    int* arr;
+    switch (type){
+        case '0':
+            arr = zeros;
+            break;
+        case '1':
+            arr = ones;
+            break;
+        
+        case '2':
+            arr = twos;
+            break;
+        
+        case '3':
+            arr = threes;
+            break;
+        
+        case '4':
+            arr = fours;
+            break;
+        
+        case 'q':
+            arr = questions;
+            break;
+        
+        case 'f':
+            arr = flags;
+            break;
+        default:
+            arr = NULL;
+            break;
+    }
+    return arr;
+}
+
+
+void clearGridBox_specific(int xpos, int ypos, char type){
+    int currentX,currentY;
+    int startX = 40 + 30*xpos;
+    int startY = 1 + 30*ypos;
+
+    int* arr = getBitMap(type);
+
+    for(int j=0; j<28; j++){
+        for(int i=0; i<28; i++){
+            currentX = startX + i;
+            currentY = startY + j;
+            int k = j*28 + i;
+            if(arr[k] != BLACK) plotPixel(currentX,currentY,BLACK);
+            
+        }
+    }
 }
