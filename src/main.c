@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <time.h>
 
 #define MAX 8 // Maximum size the board can be
 #define WIDTH 6 //Width of boxes that are drawn
@@ -694,6 +695,9 @@ void initializeBoard_random(GridSquare board[][MAX], int size, int mineNumber){
 
     // places mines randomly
     while (minesPlaced < mineNumber){
+        
+        // srand(time(NULL)); // set seed for random
+
         int randomRow = rand()%size;
         int randomCol = rand()%size;
         GridSquare* square = &board[randomRow][randomCol];
