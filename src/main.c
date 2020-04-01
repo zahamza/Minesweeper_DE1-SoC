@@ -8,6 +8,7 @@
 ///IF A LOCATION IS FLAGGED/QUESTIONED IT CAN STILL BE UNCOVERED
 ///UNCOVERED POSITIONS SHOW THE NUMBER OF BOMBS ADJACENT
 ///IF YOU UNCOVER A POSITION AND IT HOLDS A MINE, YOU LOSE
+///YOU MUST UNCOVER ALL POSITION WITHOUT MINES AND FLAG ALL POSITIONS WITH MINES TO WIN
 ///################################################################################################################
 ///################################################################################################################
 
@@ -20,8 +21,8 @@
 
 #define MAX 8 // Maximum size the board can be
 #define WIDTH 6 //Width of boxes that are drawn
-#define BOMBS 8
-#define MAX_ADJACENT_MINES 4
+#define BOMBS 11 //Number of bombs placed on the map
+#define MAX_ADJACENT_MINES 4 //Maximum number of adjacent mines to a position
 
 //Colours
 #define WHITE 0xFFFF
@@ -32,8 +33,8 @@
 volatile int pixel_buffer_start; //Pointer to the current pixel buffer
 volatile int* ps2_ptr = (int*) 0xFF200100; //Pointer to PS2
 volatile int* push_ptr = (int*) 0xFF200050; //Pointer to KEY port
-volatile int* hex_ptr = (int*) 0xFF200020;
-volatile int* led_ptr = (int*) 0xFF200000;
+volatile int* hex_ptr = (int*) 0xFF200020;  //POinter to hex
+volatile int* led_ptr = (int*) 0xFF200000;  //Pointer to led
 
 //Globals for game
 int currX,currY,prevX,prevY,remX,remY;
@@ -614,8 +615,7 @@ int main(int argc, char** argv){
     convertArray(win,wins,40000);
 
 
-    //SETTING UP POINTERS FOR PS2
-
+    //Setting up booleans for reading from keyboard and running the game
     int keyData, keyValid, pushData;
     bool run = true;
     bool upPress = false;
@@ -632,10 +632,12 @@ int main(int argc, char** argv){
     remY = 0;
 
     while(run){
-        int count = 0;
+        int count = 0;                 //Used to track when win has been reached
         keyData = *ps2_ptr;
         keyValid = keyData & 0x8000;   //Checking bit 15 which determines validity
         pushData = (*push_ptr & 0xF);  //Obtaining first four bits of data register for push keys
+        
+        //For keyboard arrows current position of hovering square is changed and previous values are updated for clearing
         if(keyValid==0x8000){
 
             //Left arrow key is pressed
@@ -734,19 +736,13 @@ int main(int argc, char** argv){
             }
         }
 
-        //clearGridLines();
-       /* for(int a=0; a<8; a++){
-            for(int b=0; b<8; b++){
-                if(board[a][b].currentStatus!=HIDDEN){
-                    //clearGridBox(a,b);
-                    int g = 4;
-                }
-            }
-        }*/
         drawGridLines();
         drawBox(clearX,clearY,BLACK);
         drawBox(byeX,byeY,BLACK);
         drawBox(realX,realY,RED);
+        //Updating squares on grid with new status
+        //Updating count to check for win
+        //Checking for lose condition
         for(int i=0; i<8; i++){
             for(int j=0; j<8; j++){
                 if(board[i][j].currentStatus==HIDDEN && (board[i][j].prevStatus==FLAGGED || board[i][j].prevStatus==QUESTIONED)){
@@ -764,7 +760,7 @@ int main(int argc, char** argv){
                     count+=1;
                 }
                 if(board[i][j].currentStatus==MINE_EXPOSED){
-                    //drawGridBox(i,j,'f');
+                    //if game is lost
                     clearScreen();
                     run = false;
                     gameOver = true;
@@ -779,12 +775,15 @@ int main(int argc, char** argv){
         if(!gameOver){
             drawBox(realX,realY,RED);
         }
+
+        //game is won
         if(count==(MAX*MAX)){
             run = false;
             clearScreen();
             drawEndScreen(wins);
         }
 
+        //Syncing with vga monitor and swapping buffers
         waitForSync();
         pixel_buffer_start = *(pixel_ctrl_ptr + 1); // we draw on the back buffer
 
@@ -979,6 +978,7 @@ void swap(int* a, int* b){
     *b = temp;
 }
 
+//Implementing algorithm from lecture
 void drawLine(int x0, int y0, int x1, int y1, short int color){
     bool steep = abs(y1-y0) > abs(x1-x0);
     if(steep){
@@ -1030,6 +1030,7 @@ void waitForSync(){
     }
 }
 
+//draw a hovering box used for select
 void drawBox(int x,int y,short int color){
     for(int a = x-WIDTH; a<= x+WIDTH; a++){
         for(int b = y-WIDTH; b <= y+WIDTH; b++){
@@ -1057,9 +1058,7 @@ void clearGridLines(){
 }
 
 void drawGridBox(int xpos, int ypos, char type){
-    //short int colour;
     int* arr = NULL;
-    //int currentX,currentY,k;
     int startX = 40 + 30*xpos;
     int startY = 1 + 30*ypos;
     arr = getBitMap(type);
