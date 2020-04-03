@@ -54,6 +54,7 @@ int main(int argc, char** argv){
 
 
     initializeBoard_random(board, size, 6);
+    printboard(board, size);
     playMove(board, size, 4,4, UNCOVER);
     printboard(board, size);
     return 0;
@@ -153,7 +154,8 @@ void playMove(GridSquare board[][MAX], int size, int row, int col, Move move){
     case UNCOVER: 
         if (currentSq -> isSafe){
             // multiple tiles may need to change
-            safeChain(board, size, row, col); 
+            if(currentSq->minesAdjacent == 0) safeChain(board, size, row, col); 
+            else currentSq->currentStatus = SAFE_EXPOSED;
         }
         else{ // mine triggered
             currentSq->currentStatus = MINE_EXPOSED;
