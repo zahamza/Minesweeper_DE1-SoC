@@ -33,8 +33,9 @@
 volatile int pixel_buffer_start; //Pointer to the current pixel buffer
 volatile int* ps2_ptr = (int*) 0xFF200100; //Pointer to PS2
 volatile int* push_ptr = (int*) 0xFF200050; //Pointer to KEY port
-volatile int* hex_ptr = (int*) 0xFF200020;  //POinter to hex
+volatile int* hex_ptr = (int*) 0xFF200020;  //Pointer to hex
 volatile int* led_ptr = (int*) 0xFF200000;  //Pointer to led
+volatile int* timer_A9_ptr = (int*) 0xFFFEC600; // pointer to A9 private timer
 
 //Globals for game
 int currX,currY,prevX,prevY,remX,remY;
@@ -575,6 +576,20 @@ void decideDrawGridBox(GridSquare board[][MAX], int row, int col);
 
 void drawEndScreen(int* map);
 
+// gets code for HEX display for decimal numbers 0-9
+// enter a number not in that range, will return all 0s
+int getSegCode(int originalNumber);
+
+// displays on HEX secondsPast in MM:SS format
+void displayHex_clock(int totalSeconds);
+
+// checks if the timer is done
+// if the timer is done it clears it's interrupt
+bool timerDone();
+
+// loads the timer with an amount you want the timer
+// to count down from
+void loadTimer(int seconds);
 
 
 int main(int argc, char** argv){
@@ -631,12 +646,26 @@ int main(int argc, char** argv){
     remX = 0;
     remY = 0;
 
+    // intialize clock and HEX Display
+    int secondsSinceStart = 0;
+    displayHex_clock(secondsSinceStart);
+    loadTimer(1); // 
+
     while(run){
         int count = 0;                 //Used to track when win has been reached
         keyData = *ps2_ptr;
         keyValid = keyData & 0x8000;   //Checking bit 15 which determines validity
         pushData = (*push_ptr & 0xF);  //Obtaining first four bits of data register for push keys
         
+
+        // checking if we need to update timer on HEX
+        if (timerDone()){
+            loadTimer(1);
+            secondsSinceStart ++;
+            displayHex_clock(secondsSinceStart);
+        }
+
+
         //For keyboard arrows current position of hovering square is changed and previous values are updated for clearing
         if(keyValid==0x8000){
 
@@ -1191,4 +1220,101 @@ void drawEndScreen(int* map){
         }
     }
 
+}
+
+
+bool timerDone(){
+    short interruptBit = *(timer_A9_ptr+3);
+
+    if(interruptBit == 0){ // timer has not reached 0 
+        return false;
+    }else{
+        *(timer_A9_ptr+3) = 0b1; // clear interrupt bit
+        return true;
+    }
+
+}
+
+void loadTimer(int seconds){
+    #define A9_RATE 200000000  //cycles per sec
+
+     // interrupt bit cleared in another function
+
+    *(timer_A9_ptr) = A9_RATE * seconds; // Timer counts down from one second
+    *(timer_A9_ptr + 2) = 0b0001; // enable timer
+
+    return;
+}
+
+int getSegCode(int originalNumber){
+    int segCode;
+    switch (originalNumber){
+        case 0:
+            segCode = 0b00111111;
+            break;
+        case 1:
+            segCode = 0b00000110;
+            break;
+        case 2:
+            segCode = 0b01011011;
+            break;
+        case 3:
+            segCode = 0b01001111;
+            break;
+        case 4:
+            segCode = 0b01100110;
+            break;
+        case 5:
+            segCode = 0b01101101;
+            break;
+        case 6:
+            segCode = 0b01111101;
+            break;
+        case 7:
+            segCode = 0b00000111;
+            break;
+        case 8:
+            segCode = 0b01111111;
+            break;
+        case 9:
+            segCode = 0b01100111;
+            break;
+        default:
+            segCode = 0;
+            break;
+        }
+    return segCode;
+}
+
+void displayHex_clock(int totalSeconds){
+
+    // calculating SS in display
+    int displaySeconds = totalSeconds%60;
+
+    // calculating MM in display
+    int displayMinutes = (totalSeconds - displaySeconds)/60;
+
+    // calculating individual digits
+    int minutes = displayMinutes%(10);
+    int tensMinutes = (displayMinutes-minutes)/10;
+    int seconds = (displaySeconds)%10;
+    int tensSeconds = (displaySeconds - seconds)/10;
+
+    int displayCode; // code we will store on HEX
+    if (tensMinutes >= 6){ // if you've taken a hour (lol)
+        int zeroCode = getSegCode(0);
+        displayCode = (zeroCode << 24) | (zeroCode << 16) | (zeroCode << 8) | (zeroCode);
+    }
+    else{
+        int code0 = getSegCode(seconds);
+        int code1 = getSegCode(tensSeconds);
+        int code2 = getSegCode(minutes);
+        int code3 = getSegCode(tensMinutes);
+        displayCode = (code3 << 24) | (code2 << 16) | (code1 << 8) | (code0);
+    }
+    
+    *(hex_ptr) = displayCode; // update display
+
+    return;
+    
 }
