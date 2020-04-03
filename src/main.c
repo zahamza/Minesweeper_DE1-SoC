@@ -576,6 +576,10 @@ void decideDrawGridBox(GridSquare board[][MAX], int row, int col);
 
 void drawEndScreen(int* map);
 
+
+// blanks the HEX display (no numbers)
+void blankHex();
+
 // gets code for HEX display for decimal numbers 0-9
 // enter a number not in that range, will return all 0s
 int getSegCode(int originalNumber);
@@ -649,7 +653,7 @@ int main(int argc, char** argv){
     // intialize clock and HEX Display
     int secondsSinceStart = 0;
     displayHex_clock(secondsSinceStart);
-    loadTimer(1); // 
+    loadTimer(1); 
 
     while(run){
         int count = 0;                 //Used to track when win has been reached
@@ -817,6 +821,8 @@ int main(int argc, char** argv){
         pixel_buffer_start = *(pixel_ctrl_ptr + 1); // we draw on the back buffer
 
     }
+    // blank the hex display once done with a run
+    blankHex();
     return 0;
 }
 
@@ -1317,4 +1323,9 @@ void displayHex_clock(int totalSeconds){
 
     return;
     
+}
+
+
+void blankHex(){
+    *(hex_ptr) = 0;
 }
