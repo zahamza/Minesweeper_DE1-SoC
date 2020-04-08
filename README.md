@@ -1,6 +1,9 @@
 # Minesweeper_DE1-SoC
 Final project for ECE243, Computer Organization. Designed to work with the DE1-SoC computer system. <br>
-<br>Tested using: [CPUlator Computer System Simulator](https://cpulator.01xz.net/?sys=arm-de1soc)
+<br>
+**Tested using:** [CPUlator Computer System Simulator](https://cpulator.01xz.net/?sys=arm-de1soc)
+<br>To run just copy and paste code from main.c into CPUlator's text editor. Then click on the drop down menu and select C. Hit complie and load. Click continue to start running
+
 
 <br>
 
