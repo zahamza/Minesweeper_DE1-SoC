@@ -21,7 +21,7 @@
 
 #define MAX 8 // Maximum size the board can be
 #define WIDTH 6 //Width of boxes that are drawn
-#define BOMBS 11 //Number of bombs placed on the map
+#define BOMBS 6 //Number of bombs placed on the map
 #define MAX_ADJACENT_MINES 4 //Maximum number of adjacent mines to a position
 
 //Colours
@@ -509,6 +509,9 @@ typedef struct gridSquare{
     Status prevStatus;
     bool isSafe; // if false there is a mine
     int minesAdjacent;
+    int numSafeDrawn;
+    int numFlagDrawn;
+    int numQuesDrawn;
 }GridSquare;
 
 // Checks if a given move is in bounds
@@ -781,15 +784,19 @@ int main(int argc, char** argv){
                 if(board[i][j].currentStatus==HIDDEN && (board[i][j].prevStatus==FLAGGED || board[i][j].prevStatus==QUESTIONED)){
                     clearGridBox(i,j);
                 }
-                if(board[i][j].currentStatus==FLAGGED){
+                if(board[i][j].currentStatus==FLAGGED && ((board[i][j].numFlagDrawn<=2) || (i==currX && j==currY) || (i==prevX && j==prevY) || (i==remX && j==remY))){
                     drawGridBox(i,j,'f');
+                    board[i][j].numFlagDrawn += 1;
                     count+=1;
                 }
-                if(board[i][j].currentStatus==QUESTIONED){
+                if(board[i][j].currentStatus==QUESTIONED && ((board[i][j].numQuesDrawn<=2) || (i==currX && j==currY) || (i==prevX && j==prevY) || (i==remX && j==remY))){
                     drawGridBox(i,j,'q');
+                    board[i][j].numQuesDrawn +=1;
                 }
-                if(board[i][j].currentStatus==SAFE_EXPOSED){
+                if(board[i][j].currentStatus==SAFE_EXPOSED && ((board[i][j].numSafeDrawn<=2) || (i==currX && j==currY) || (i==prevX && j==prevY) || (i==remX && j==remY))){
                     decideDrawGridBox(board,i,j);
+                    //board[i][j].prevStatus = SAFE_EXPOSED;
+                    board[i][j].numSafeDrawn += 1;
                     count+=1;
                 }
                 if(board[i][j].currentStatus==MINE_EXPOSED){
@@ -844,6 +851,9 @@ void initializeBoard_random(GridSquare board[][MAX], int size, int mineNumber){
             square -> currentStatus = HIDDEN;
             square -> prevStatus = HIDDEN;
             square -> minesAdjacent = 0;
+            square -> numSafeDrawn = 0;
+            square -> numQuesDrawn = 0;
+            square -> numFlagDrawn = 0;
         }
     }
 
@@ -911,6 +921,7 @@ void playMove(GridSquare board[][MAX], int size, int row, int col, Move move){
     case UNCOVER: 
         if (currentSq -> isSafe){
             // multiple tiles may need to change
+            currentSq->numSafeDrawn=0;
             if(currentSq->minesAdjacent == 0) safeChain(board, size, row, col); 
             
             else currentSq->currentStatus = SAFE_EXPOSED;
@@ -925,6 +936,7 @@ void playMove(GridSquare board[][MAX], int size, int row, int col, Move move){
         if(currState == FLAGGED){
             currentSq ->currentStatus = HIDDEN;
             currentSq ->prevStatus = FLAGGED;
+            currentSq->numFlagDrawn=0;
         } 
         else if (currState == HIDDEN || currState == QUESTIONED){ // making it flagged
             currentSq -> currentStatus = FLAGGED;
@@ -940,6 +952,7 @@ void playMove(GridSquare board[][MAX], int size, int row, int col, Move move){
         else if(currState == QUESTIONED){
             currentSq -> currentStatus = HIDDEN;
             currentSq ->prevStatus = QUESTIONED;
+            currentSq->numQuesDrawn=0;
         }
         break;
 
@@ -957,6 +970,7 @@ void safeChain(GridSquare board[][MAX], int size, int row, int col){
     GridSquare* currentSq = &board[row][col];
 
     currentSq->currentStatus = SAFE_EXPOSED; // update selected
+    currentSq->numSafeDrawn=0;
 
     // iterate through the 8 squares adjacent
     for(int deltaRow = -1; deltaRow < 2; deltaRow ++){
@@ -1106,6 +1120,9 @@ void drawGridBox(int xpos, int ypos, char type){
                 int currentY = startY + j;
                 int k = j*28 + i;
                 short int colour = arr[k];
+                if(type=='q' || type=='f'){
+                    if(colour==0xFFFF) colour = 0x001F;
+                }
                 plotPixel(currentX,currentY,colour);
             
             }
