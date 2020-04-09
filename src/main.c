@@ -630,7 +630,7 @@ bool timerDone();
 void loadTimer(int seconds);
 
 //returns the number of uncovered + flagged
-int countCalculate(GridSquare board[][MAX]);
+int countCalculate(GridSquare board[][MAX], int size);
 
 
 int main(int argc, char** argv){
@@ -879,8 +879,9 @@ int main(int argc, char** argv){
         }
 
         //game is won
-        int count = countCalculate(board);
-        if(count==(MAX*MAX)){
+        int size = MAX; // we are currently using a max board
+        int count = countCalculate(board, size);
+        if(count==(size*size)){
             run = false;
             clearScreen();
             drawEndScreen(wins);
@@ -1425,11 +1426,12 @@ void blankHex(){
     *(hex_ptr) = 0;
 }
 
-int countCalculate(GridSquare board[][MAX]){
+int countCalculate(GridSquare board[][MAX], int size){
     int count = 0;
-    for(int i=0; i<MAX; i++){
-        for(int j=0; j<MAX; j++){
-            if(board[i][j].currentStatus==SAFE_EXPOSED || board[i][j].currentStatus==FLAGGED) count += 1;
+    for(int i=0; i<size; i++){
+        for(int j=0; j<size; j++){
+            if(board[i][j].currentStatus==SAFE_EXPOSED) count += 1;
+            else if(board[i][j].currentStatus==FLAGGED && !board[i][j].isSafe) count+=1;
         }
     }
     return count;
