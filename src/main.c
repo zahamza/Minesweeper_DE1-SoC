@@ -860,7 +860,7 @@ void initializeBoard_random(GridSquare board[][MAX], int size, int mineNumber){
     // places mines randomly
     while (minesPlaced < mineNumber){
         
-        // srand(time(NULL)); // set seed for random
+        srand(time(NULL)); // set seed for random
 
         int randomRow = rand()%size;
         int randomCol = rand()%size;
