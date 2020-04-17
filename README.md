@@ -4,14 +4,18 @@ Final project for ECE243, Computer Organization. Designed to work with the DE1-S
 **Tested using:** [CPUlator Computer System Simulator](https://cpulator.01xz.net/?sys=arm-de1soc)
 <br>To run just copy and paste code from main.c into CPUlator's text editor. Then click on the drop down menu and select C. Hit complie and load. Click continue to start running
 
-
 <br>
+
+![Minesweeper Run](/images/MinesweeperScreenshot.png)
+
 
 **Project Description:**
 We have created a version of Minesweeper to be used in conjunction with the De1-Soc. You lose if you uncover a square and a mine is revealed. If you uncover a square and there is no mine revealed, the square will display the number of mines directly adjacent to it. To win you must uncover all safe squares and flag all bombs
 <br>
 <br>
 **Controls:**
+<br>
+**Note:** You should/can drag ps2keyboard, HEX display, and the VGA display modules closer to each other on CPUlator
 
 *   A position is ‘selected’ if red square is hovering over it
 *   Use PS2-Keyboards arrow keys (🠄🠆🠅🠇) to control where to select
@@ -33,6 +37,5 @@ We have created a version of Minesweeper to be used in conjunction with the De1-
 <br>
 
 **Features we can/will add:**
-1. Display all bombs if lose
-2. Game loop
+1. Keyboard inputs to place in conjuction with KEYS/push_buttons
 
